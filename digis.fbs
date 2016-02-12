@@ -1,0 +1,14 @@
+
+table FBDigi {
+  a:int;
+  b:int;
+  c:int; 
+  d:double; 
+  e:double;
+}
+
+table FBDigis { 
+  digis:[FBDigi];
+}
+
+root_type FBDigis;

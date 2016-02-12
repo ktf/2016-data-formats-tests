@@ -1,0 +1,18 @@
+table FBHit{
+  x:int;
+  y:int;
+  a:double; 
+  b:double;
+  c:double; 
+  d:double;
+  e:double; 
+  f:double;
+  g:double; 
+  h:double;
+}
+
+table FBHits {
+  hits:[FBHit];
+}
+
+root_type FBHits;
