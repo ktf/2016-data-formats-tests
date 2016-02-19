@@ -5,8 +5,14 @@
 #include "hits_generated.h"
 #include "digis_generated.h"
 #include <msgpack.hpp>
+#include "event_types.h"
 #include "MPackEDM.h"
 #include "TSystem.h"
+#include "thrift/protocol/TBinaryProtocol.h"
+#include "thrift/protocol/TCompactProtocol.h"
+#include "thrift/protocol/TJSONProtocol.h"
+#include "thrift/transport/TBufferTransports.h"
+
 
 #include <iostream>
 #include <sstream>
@@ -118,5 +124,46 @@ main() {
     msgpack::sbuffer sbuf;
     msgpack::pack(sbuf, vec);
     std::cerr << "Hit msgpack: " << sbuf.size() << std::endl;
+}
+{
+  using namespace apache::thrift::protocol;
+  using namespace apache::thrift::transport;
+  boost::shared_ptr<TMemoryBuffer> transport(new TMemoryBuffer());
+  boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+  TFDigis digis;
+  digis.a.resize(SIZE);
+  for (size_t i = 0; i < SIZE; ++i)
+  {
+    digis.a[i].a = rand();
+    digis.a[i].b = rand();
+    digis.a[i].c = rand();
+    digis.a[i].d = rand();
+    digis.a[i].e = rand();
+  }
+  digis.write(protocol.get());
+  std::string serialized_string = transport->getBufferAsString();
+  std::cerr << "Thrift memory buffer:" << serialized_string.size() <<std::endl;
+
+  boost::shared_ptr<TMemoryBuffer> transport2(new TMemoryBuffer());
+  boost::shared_ptr<TProtocol> protocol2(new TBinaryProtocol(transport2));
+  TFHits hits;
+  hits.a.resize(SIZE);
+  for (size_t i = 0; i < SIZE; ++i)
+  {
+    hits.a[i].a = rand();
+    hits.a[i].b = rand();
+    hits.a[i].c = rand();
+    hits.a[i].d = rand();
+    hits.a[i].e = rand();
+    hits.a[i].f = rand();
+    hits.a[i].g = rand();
+    hits.a[i].h = rand();
+    hits.a[i].i = rand();
+    hits.a[i].l = rand();
+  }
+  
+  hits.write(protocol2.get());
+  std::string serialized_string2 = transport2->getBufferAsString();
+  std::cerr << "Thrift memory buffer:" << serialized_string2.size() <<std::endl;
 }
 }
