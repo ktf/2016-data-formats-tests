@@ -17,43 +17,43 @@
 #include <iostream>
 #include <sstream>
 
-constexpr int SIZE = 30;
-
 int
-main() {
-  Digi *d = new Digi();
-  Hit *h = new Hit();
+main(int argc, char ** argv) {
+  if (argc != 2)
+  {
+    std::cerr << "Please specify how many items" << std::endl;
+    exit(1);
+  }
+  
+  int SIZE = atoi(argv[1]);
+
   auto root_digis = new ArrayOfDigi();
   root_digis->digis.resize(SIZE);
   auto root_hits = new ArrayOfHits();
   root_hits->hits.resize(SIZE);
 {
-  std::cerr << "Digis - packed in memory: " << SIZE*3*4 + SIZE*2*8 << std::endl;
-  std::cerr << "Hits - packed in memory: " << SIZE*2*4 + SIZE*8*8 << std::endl;
+  std::cerr << "Digis - packed in memory: " << SIZE*3*4 + SIZE*2*8 << std::endl
+            << "Hits - packed in memory: " << SIZE*2*4 + SIZE*8*8 << std::endl;
 }
 {
   TMessage message(kMESS_OBJECT);
   TMessage messageStruct(kMESS_OBJECT);
-  TMessage messageSingle(kMESS_OBJECT);
   message.WriteObject(root_digis);
   messageStruct.WriteObject(new StructureOfDigis(SIZE));
-  messageSingle.WriteObject(d);
-  std::cerr << "Digis TMessage - Single: " << messageSingle.Length() << ", AoS: " << message.Length()
-            << ", SoA:" << messageStruct.Length() << std::endl;
+  std::cerr << "Digis TMessage - AoS: " << message.Length() << std::endl
+            << "Digis TMessage - SoA:" << messageStruct.Length() << std::endl;
 }
 {
   TMessage message(kMESS_OBJECT);
   TMessage messageStruct(kMESS_OBJECT);
-  TMessage messageSingle(kMESS_OBJECT);
   message.WriteObject(root_hits);
   messageStruct.WriteObject(new StructureOfHits(SIZE));
-  messageSingle.WriteObject(h);
-  std::cerr << "Hits TMessage - Single: " << messageSingle.Length() << ", AoS: " << message.Length() 
-            << ", SoA:" << messageStruct.Length() << std::endl;
+  std::cerr << "Hits TMessage - AoS:" << message.Length() << std::endl
+            << "Hits TMessage - SoA:" << messageStruct.Length() << std::endl;
 }
 {
   flatbuffers::FlatBufferBuilder builder;
-  flatbuffers::Offset<FBDigi> digi[SIZE];
+  std::vector<flatbuffers::Offset<FBDigi>> digi(SIZE);
   for (size_t i = 0; i < SIZE; ++i)
   {
     FBDigiBuilder elementBuilder(builder);
@@ -64,14 +64,14 @@ main() {
     elementBuilder.add_e(rand());
     digi[i] = elementBuilder.Finish();
   }
-  auto vec = builder.CreateVector(digi, SIZE);
+  auto vec = builder.CreateVector(&digi[0], SIZE);
   auto container = CreateFBDigis(builder, vec);
   FinishFBDigisBuffer(builder, container);
-  std::cerr << "Digis Flatbuffer - " << builder.GetSize() << std::endl;
+  std::cerr << "Digis Flatbuffer: " << builder.GetSize() << std::endl;
 }
 {
   flatbuffers::FlatBufferBuilder builder;
-  flatbuffers::Offset<FBHit> hits[SIZE];
+  std::vector<flatbuffers::Offset<FBHit>> hits(SIZE);
   for (size_t i = 0; i < SIZE; ++i)
   {
     FBHitBuilder fbhitBuilder(builder);
@@ -85,10 +85,10 @@ main() {
     fbhitBuilder.add_h(rand());
     hits[i] = fbhitBuilder.Finish();
   }
-  auto vec = builder.CreateVector(hits, SIZE);
+  auto vec = builder.CreateVector(&hits[0], SIZE);
   auto container = CreateFBHits(builder, vec);
   FinishFBHitsBuffer(builder, container);
-  std::cerr << "Hits Flatbuffer - " << builder.GetSize() << std::endl;
+  std::cerr << "Hits Flatbuffer: " << builder.GetSize() << std::endl;
 }
 {
     /* msgpack::sbuffer is a simple buffer implementation. */
@@ -130,6 +130,9 @@ main() {
   using namespace apache::thrift::transport;
   boost::shared_ptr<TMemoryBuffer> transport(new TMemoryBuffer());
   boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+  boost::shared_ptr<TMemoryBuffer> compactTransport(new TMemoryBuffer());
+  boost::shared_ptr<TProtocol> compactProtocol(new TCompactProtocol(compactTransport));
+
   TFDigis digis;
   digis.a.resize(SIZE);
   for (size_t i = 0; i < SIZE; ++i)
@@ -141,11 +144,15 @@ main() {
     digis.a[i].e = rand();
   }
   digis.write(protocol.get());
-  std::string serialized_string = transport->getBufferAsString();
-  std::cerr << "Thrift memory buffer:" << serialized_string.size() <<std::endl;
+  std::cerr << "Digis Thrift:" << transport->getBufferAsString().size() <<std::endl;
+  
+  digis.write(compactProtocol.get());
+  std::cerr << "Digis Thrift (TCompactProtocol):" << compactTransport->getBufferAsString().size() <<std::endl;
 
   boost::shared_ptr<TMemoryBuffer> transport2(new TMemoryBuffer());
   boost::shared_ptr<TProtocol> protocol2(new TBinaryProtocol(transport2));
+  boost::shared_ptr<TMemoryBuffer> compactTransport2(new TMemoryBuffer());
+  boost::shared_ptr<TProtocol> compactProtocol2(new TCompactProtocol(compactTransport2));
   TFHits hits;
   hits.a.resize(SIZE);
   for (size_t i = 0; i < SIZE; ++i)
@@ -163,7 +170,8 @@ main() {
   }
   
   hits.write(protocol2.get());
-  std::string serialized_string2 = transport2->getBufferAsString();
-  std::cerr << "Thrift memory buffer:" << serialized_string2.size() <<std::endl;
+  std::cerr << "Hits Thrift:" << transport2->getBufferAsString().size() <<std::endl;
+  hits.write(compactProtocol2.get());
+  std::cerr << "Hits Thrift (TCompactProtocol):" << compactTransport2->getBufferAsString().size() <<std::endl;
 }
 }
