@@ -174,4 +174,72 @@ main(int argc, char ** argv) {
   hits.write(compactProtocol2.get());
   std::cerr << "Hits Thrift (TCompactProtocol):" << compactTransport2->getBufferAsString().size() <<std::endl;
 }
+{
+  using namespace apache::thrift::protocol;
+  using namespace apache::thrift::transport;
+
+  boost::shared_ptr<TMemoryBuffer> transport(new TMemoryBuffer());
+  boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+  boost::shared_ptr<TMemoryBuffer> compactTransport(new TMemoryBuffer());
+  boost::shared_ptr<TProtocol> compactProtocol(new TCompactProtocol(compactTransport));
+  TFDigisSoA digis;
+
+  digis.a.resize(SIZE);
+  digis.b.resize(SIZE);
+  digis.c.resize(SIZE);
+  digis.d.resize(SIZE);
+  digis.e.resize(SIZE);
+  for (size_t i = 0; i < SIZE; ++i)
+  {
+    digis.a[i] = rand();
+    digis.b[i] = rand();
+    digis.c[i] = rand();
+    digis.d[i] = rand();
+    digis.e[i] = rand();
+  }
+  
+  digis.write(protocol.get());
+  std::cerr << "Digis Thrift SoA:" << transport->getBufferAsString().size() <<std::endl;
+  digis.write(compactProtocol.get());
+  std::cerr << "Digis Thrift SoA (TCompactProtocol):" << compactTransport->getBufferAsString().size() <<std::endl;
+}
+{
+  using namespace apache::thrift::protocol;
+  using namespace apache::thrift::transport;
+
+  boost::shared_ptr<TMemoryBuffer> transport(new TMemoryBuffer());
+  boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+  boost::shared_ptr<TMemoryBuffer> compactTransport(new TMemoryBuffer());
+  boost::shared_ptr<TProtocol> compactProtocol(new TCompactProtocol(compactTransport));
+  TFHitsSoA hits;
+
+  hits.a.resize(SIZE);
+  hits.b.resize(SIZE);
+  hits.c.resize(SIZE);
+  hits.d.resize(SIZE);
+  hits.e.resize(SIZE);
+  hits.f.resize(SIZE);
+  hits.g.resize(SIZE);
+  hits.h.resize(SIZE);
+  hits.i.resize(SIZE);
+  hits.l.resize(SIZE);
+  for (size_t i = 0; i < SIZE; ++i)
+  {
+    hits.a[i] = rand();
+    hits.b[i] = rand();
+    hits.c[i] = rand();
+    hits.f[i] = rand();
+    hits.e[i] = rand();
+    hits.f[i] = rand();
+    hits.g[i] = rand();
+    hits.h[i] = rand();
+    hits.i[i] = rand();
+    hits.l[i] = rand();
+  }
+  
+  hits.write(protocol.get());
+  std::cerr << "Hits Thrift SoA:" << transport->getBufferAsString().size() <<std::endl;
+  hits.write(compactProtocol.get());
+  std::cerr << "Hits Thrift SoA (TCompactProtocol):" << compactTransport->getBufferAsString().size() <<std::endl;
+}
 }
